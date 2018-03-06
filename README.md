@@ -1,9 +1,9 @@
 # I Can't Believe It's Not HUDMessage
 
-This is an example API I'm writing for the **HUDMessage** interface Graf
-recently exported to ZScript.
+This is an example **API** I'm writing for the **HUDMessage** interface
+[Graf](https://github.com/coelckers) recently exported to **ZScript**.
 
-Hopefully it shouldn't be as ugly as ACS **HUDMessage**.
+Hopefully it shouldn't be as ugly as **ACS** **HUDMessage**.
 
 ## The API
 
@@ -35,7 +35,7 @@ into account are:
 * `notHudMessage.DrawLine()` : Called for each line that has to be drawn.
 * `notHudMessage.DoTick()` : Called each tic. Return true to mark the message
   as expired. Parent class function must be called.
-* `QueuedMsg.AddSelf()` : For adding the message to the Status Bar.
+* `QueuedMsg.AddSelf()` : For adding the message to the **Status Bar**.
 
 In addition, each subclass of **notHudMessage** must implement its own `Create`
 function, with its own set of parameters and return type, to create an
