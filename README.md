@@ -1,7 +1,8 @@
 # I Can't Believe It's Not HUDMessage
 
 This is an example **API** I'm writing for the **HUDMessage** interface
-[Graf](https://github.com/coelckers) recently exported to **ZScript**.
+[Graf recently exported](https://github.com/coelckers/gzdoom/commit/bb16e34bf4f589f74acbd51fe31e96c07d37b838)
+to **ZScript**.
 
 Hopefully it shouldn't be as ugly as **ACS** **HUDMessage**.
 
