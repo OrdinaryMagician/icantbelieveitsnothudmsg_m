@@ -39,6 +39,6 @@ into account are:
 * `QueuedMsg.AddSelf()` : For adding the message to the **Status Bar**.
 
 In addition, each subclass of **notHudMessage** must implement its own static
-clearscope `Create` function, with its own set of parameters and return type,
+clearscope `Create()` function, with its own set of parameters and return type,
 to create an instance of its **QueuedMsg** subclass. Note that this is NOT a
 virtual function, so there's no overrides to set or anything.
