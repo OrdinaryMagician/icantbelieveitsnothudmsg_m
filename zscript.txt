@@ -75,7 +75,7 @@ Class notHudMessage : HUDMessageBase
 
 	virtual void Setup()
 	{
-		lines = fnt.BreakLines(txt,(wrap<=0)?0x7fffffff:wrap);
+		lines = fnt.BreakLines(txt,(wrap<=0)?int.max:wrap);
 		double longest = 0, len;
 		for ( int i=0; i<lines.Count(); i++ )
 		{
