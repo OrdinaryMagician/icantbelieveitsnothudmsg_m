@@ -1,0 +1,277 @@
+version "3.3"
+
+// hello graf you forgot to export this enum
+enum EHUDMSGLayer
+{
+        HUDMSGLayer_OverHUD,
+        HUDMSGLayer_UnderHUD,
+        HUDMSGLayer_OverMap
+};
+
+Class notHudMessage : HUDMessageBase
+{
+	BrokenLines lines;
+	Font fnt;
+	int wrap, talign, tics, holdtics, color, layer;
+	Vector2 balign, pos, vsize, bsize;
+	string txt;
+
+	// calculate alignment of text box
+	Vector2 CalculateBoxAlignment()
+	{
+		vector2 base;
+		if ( balign.x < 0 ) base.x = pos.x;
+		else if ( balign.x > 0 ) base.x = pos.x-bsize.x;
+		else base.x = pos.x-bsize.x/2;
+		if ( balign.y < 0 ) base.x = pos.y;
+		else if ( balign.y > 0 ) base.y = pos.y-bsize.y;
+		else base.y = pos.y-bsize.y/2;
+		return base;
+	}
+
+	// draw a line of text
+	virtual void DrawLine( double x, double y, string line )
+	{
+		int vw = (vsize.x>0)?vsize.x:Screen.GetWidth();
+		int vh = (vsize.y>0)?vsize.y:Screen.GetHeight();
+		Screen.DrawText(fnt,color,x,y,line,DTA_VirtualWidth,vw,DTA_VirtualHeight,vh);
+	}
+
+	override void Draw( int bottom, int visibility )
+	{
+		if ( visibility & layer ) return;
+		Vector2 base = CalculateBoxAlignment();
+		if ( !lines )
+		{
+			DrawLine(base.x,base.y,txt);
+			return;
+		}
+		double linex, liney = base.y, len;
+		String line;
+		for ( int i=0; i<lines.Count(); i++ )
+		{
+			line = lines.StringAt(i);
+			len = fnt.StringWidth(line);
+			// calculate text alignment
+			if ( talign < 0 ) linex = base.x;
+			else if ( talign > 0 ) linex = base.x+(bsize.x-len);
+			else linex = base.x+(len/2);
+			DrawLine(linex,liney,line);
+			liney += fnt.GetHeight();
+		}
+	}
+
+	virtual bool DoTick()
+	{
+		if ( holdtics && (tics > holdtics) ) return true;
+		return false;
+	}
+
+	override bool Tick()
+	{
+		tics++;
+		return DoTick();
+	}
+
+	virtual void Setup()
+	{
+		lines = fnt.BreakLines(txt,(wrap<=0)?0x7fffffff:wrap);
+		double longest = 0, len;
+		for ( int i=0; i<lines.Count(); i++ )
+		{
+			len = fnt.StringWidth(lines.StringAt(i));
+			if ( len > longest ) longest = len;
+		}
+		bsize = (len,fnt.GetHeight()*lines.Count());
+	}
+
+	void Init()
+	{
+		tics = 0;
+		Setup();
+	}
+}
+
+Class notHudMessageWaggle : notHudMessage
+{
+	double phase, speed, strength, frequency;
+
+	override void DrawLine( double x, double y, string line )
+	{
+		int vw = (vsize.x>0)?vsize.x:Screen.GetWidth();
+		int vh = (vsize.y>0)?vsize.y:Screen.GetHeight();
+		double cphase = phase;
+		for ( int i=0; i<line.length(); i++ )
+		{
+			Screen.DrawChar(fnt,color,x,y+sin(cphase)*strength,line.CharCodeAt(i),DTA_VirtualWidth,vw,DTA_VirtualHeight,vh);
+			x += fnt.GetCharWidth(line.CharCodeAt(i));
+			cphase += frequency;
+		}
+	}
+
+	override bool DoTick()
+	{
+		phase += speed;
+		return Super.DoTick();
+	}
+
+	override void Setup()
+	{
+		Super.Setup();
+		phase = 0;
+	}
+}
+
+enum EMsgKind
+{
+	NOTMSG_PLAIN,
+	NOTMSG_WAGGLE
+};
+
+Class QueuedMsg
+{
+	Font fnt;
+	TextureID tex;
+	string txt;
+	Vector2 pos, vsize, balign;
+	double holdtics, speed, strength, frequency;
+	int layer, color, wrap, talign;
+	int timestamp;
+	int kind;
+
+	QueuedMsg InitPlain( Font fnt, string txt, Vector2 pos, Vector2 vsize, int talign, Vector2 balign, int color, double holdtime, int wrap, int layer )
+	{
+		self.kind = NOTMSG_PLAIN;
+		self.fnt = fnt;
+		self.txt = txt;
+		self.pos = pos;
+		self.vsize = vsize;
+		self.talign = talign;
+		self.balign = balign;
+		self.color = color;
+		self.holdtics = holdtime*Thinker.TICRATE;
+		self.wrap = wrap;
+		self.layer = layer;
+		self.timestamp = gametic;
+		return self;
+	}
+
+	QueuedMsg InitWaggle( Font fnt, string txt, Vector2 pos, Vector2 vsize, int talign, Vector2 balign, int color, double holdtime, double speed, double strength, double frequency, int wrap, int layer )
+	{
+		self.kind = NOTMSG_WAGGLE;
+		self.fnt = fnt;
+		self.txt = txt;
+		self.pos = pos;
+		self.vsize = vsize;
+		self.talign = talign;
+		self.balign = balign;
+		self.color = color;
+		self.holdtics = holdtime*Thinker.TICRATE;
+		self.speed = speed*Thinker.TICRATE;
+		self.strength = strength;
+		self.frequency = frequency;
+		self.wrap = wrap;
+		self.layer = layer;
+		self.timestamp = gametic;
+		return self;
+	}
+
+	ui void AddSelf()
+	{
+		notHudMessage msg = null;
+		switch ( kind )
+		{
+		case NOTMSG_PLAIN:
+			msg = new("notHudMessage");
+			msg.fnt = fnt;
+			msg.txt = txt;
+			msg.pos = pos;
+			msg.vsize = vsize;
+			msg.talign = talign;
+			msg.balign = balign;
+			msg.color = color;
+			msg.holdtics = holdtics;
+			msg.wrap = wrap;
+			msg.layer = layer;
+			msg.Init();
+			break;
+		case NOTMSG_WAGGLE:
+			msg = new("notHudMessageWaggle");
+			msg.fnt = fnt;
+			msg.txt = txt;
+			msg.pos = pos;
+			msg.vsize = vsize;
+			msg.talign = talign;
+			msg.balign = balign;
+			msg.color = color;
+			msg.holdtics = holdtics;
+			msg.wrap = wrap;
+			msg.layer = layer;
+			notHudMessageWaggle(msg).speed = speed;
+			notHudMessageWaggle(msg).strength = strength;
+			notHudMessageWaggle(msg).frequency = frequency;
+			msg.Init();
+			break;
+		default:
+			ThrowAbortException("Unhandled message kind %d",kind);
+			break;
+		}
+		StatusBar.AttachMessage(msg);
+	}
+}
+
+// this event handler serves as a proxy between play and ui for adding messages
+Class notHudMessageHandler : EventHandler
+{
+	Array <QueuedMsg> queue;
+
+	override void UiTick()
+	{
+		// load 'em up
+		for ( int i=0; i<queue.size(); i++ )
+		{
+			if ( queue[i].timestamp == (gametic-1) )
+			{
+				Console.Printf("adding message of index %d with timestamp %d at gametic %d",i,queue[i].timestamp,gametic);
+				queue[i].AddSelf();
+			}
+		}
+	}
+
+	override void WorldTick()
+	{
+		for ( int i=0; i<queue.size(); i++ )
+		{
+			if ( queue[i].timestamp >= gametic ) continue;
+			Console.Printf("pruning message of index %d with timestamp %d at gametic %d",i,queue[i].timestamp,gametic);
+			queue.Delete(i);
+			i--;
+		}
+	}
+
+	override void NetworkProcess( ConsoleEvent e )
+	{
+		if ( e.Name ~== "TestMsg" )
+		{
+			Vector2 midscr = (Screen.GetWidth(),Screen.GetHeight())*0.5;
+			WaggleMsg(smallfont,"How did this get here I am not good with computer",(160,180),(320,200),frequency:60.0);
+			PlainMsg(Font.GetFont('STFOUCH0'),"A A A",(80,50),(160,100),holdtime:5.0);
+		}
+	}
+
+	static void PlainMsg( Font fnt, string txt, Vector2 pos, Vector2 vsize = (0,0), int talign = -1, Vector2 balign = (0,0), int color = Font.CR_UNTRANSLATED, double holdtime = 0.0, int wrap = 0, int layer = HUDMSGLayer_OverHUD )
+	{
+		QueuedMsg tosend = new("QueuedMsg").InitPlain(fnt,txt,pos,vsize,talign,balign,color,holdtime,wrap,layer);
+		notHudMessageHandler local = notHudMessageHandler(Find("notHudMessageHandler"));
+		if ( !local ) return;
+		local.queue.Push(tosend);
+	}
+
+	static void WaggleMsg( Font fnt, string txt, Vector2 pos, Vector2 vsize = (0,0), int talign = -1, Vector2 balign = (0,0), int color = Font.CR_UNTRANSLATED, double holdtime = 0.0, double speed = 1.0, double strength = 1.0, double frequency = 1.0, int wrap = 0, int layer = HUDMSGLayer_OverHUD )
+	{
+		QueuedMsg tosend = new("QueuedMsg").InitWaggle(fnt,txt,pos,vsize,talign,balign,color,holdtime,speed,strength,frequency,wrap,layer);
+		notHudMessageHandler local = notHudMessageHandler(Find("notHudMessageHandler"));
+		if ( !local ) return;
+		local.queue.Push(tosend);
+	}
+}
