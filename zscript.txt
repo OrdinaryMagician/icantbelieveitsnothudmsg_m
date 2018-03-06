@@ -90,6 +90,23 @@ Class notHudMessage : HUDMessageBase
 		tics = 0;
 		Setup();
 	}
+
+	static clearscope QueuedMsg Create( Font fnt, string txt, Vector2 pos, Vector2 vsize, int talign, Vector2 balign, int color, double holdtime, int wrap, int layer )
+	{
+		let msg = new("QueuedMsg");
+		msg.fnt = fnt;
+		msg.txt = txt;
+		msg.pos = pos;
+		msg.vsize = vsize;
+		msg.talign = talign;
+		msg.balign = balign;
+		msg.color = color;
+		msg.holdtics = holdtime*Thinker.TICRATE;
+		msg.wrap = wrap;
+		msg.layer = layer;
+		msg.timestamp = gametic;
+		return msg;
+	}
 }
 
 Class notHudMessageWaggle : notHudMessage
@@ -120,13 +137,27 @@ Class notHudMessageWaggle : notHudMessage
 		Super.Setup();
 		phase = 0;
 	}
-}
 
-enum EMsgKind
-{
-	NOTMSG_PLAIN,
-	NOTMSG_WAGGLE
-};
+	static clearscope QueuedMsgWaggle Create( Font fnt, string txt, Vector2 pos, Vector2 vsize, int talign, Vector2 balign, int color, double holdtime, double speed, double strength, double frequency, int wrap, int layer )
+	{
+		let msg = new("QueuedMsgWaggle");
+		msg.fnt = fnt;
+		msg.txt = txt;
+		msg.pos = pos;
+		msg.vsize = vsize;
+		msg.talign = talign;
+		msg.balign = balign;
+		msg.color = color;
+		msg.holdtics = holdtime*Thinker.TICRATE;
+		msg.speed = speed*Thinker.TICRATE;
+		msg.strength = strength;
+		msg.frequency = frequency;
+		msg.wrap = wrap;
+		msg.layer = layer;
+		msg.timestamp = gametic;
+		return msg;
+	}
+}
 
 Class QueuedMsg
 {
@@ -134,88 +165,49 @@ Class QueuedMsg
 	TextureID tex;
 	string txt;
 	Vector2 pos, vsize, balign;
-	double holdtics, speed, strength, frequency;
+	double holdtics;
 	int layer, color, wrap, talign;
 	int timestamp;
-	int kind;
 
-	QueuedMsg InitPlain( Font fnt, string txt, Vector2 pos, Vector2 vsize, int talign, Vector2 balign, int color, double holdtime, int wrap, int layer )
+	virtual ui void AddSelf()
 	{
-		self.kind = NOTMSG_PLAIN;
-		self.fnt = fnt;
-		self.txt = txt;
-		self.pos = pos;
-		self.vsize = vsize;
-		self.talign = talign;
-		self.balign = balign;
-		self.color = color;
-		self.holdtics = holdtime*Thinker.TICRATE;
-		self.wrap = wrap;
-		self.layer = layer;
-		self.timestamp = gametic;
-		return self;
+		let msg = new("notHudMessage");
+		msg.fnt = fnt;
+		msg.txt = txt;
+		msg.pos = pos;
+		msg.vsize = vsize;
+		msg.talign = talign;
+		msg.balign = balign;
+		msg.color = color;
+		msg.holdtics = holdtics;
+		msg.wrap = wrap;
+		msg.layer = layer;
+		msg.Init();
+		StatusBar.AttachMessage(msg);
 	}
+}
 
-	QueuedMsg InitWaggle( Font fnt, string txt, Vector2 pos, Vector2 vsize, int talign, Vector2 balign, int color, double holdtime, double speed, double strength, double frequency, int wrap, int layer )
-	{
-		self.kind = NOTMSG_WAGGLE;
-		self.fnt = fnt;
-		self.txt = txt;
-		self.pos = pos;
-		self.vsize = vsize;
-		self.talign = talign;
-		self.balign = balign;
-		self.color = color;
-		self.holdtics = holdtime*Thinker.TICRATE;
-		self.speed = speed*Thinker.TICRATE;
-		self.strength = strength;
-		self.frequency = frequency;
-		self.wrap = wrap;
-		self.layer = layer;
-		self.timestamp = gametic;
-		return self;
-	}
+Class QueuedMsgWaggle : QueuedMsg
+{
+	double speed, strength, frequency;
 
-	ui void AddSelf()
+	override void AddSelf()
 	{
-		notHudMessage msg = null;
-		switch ( kind )
-		{
-		case NOTMSG_PLAIN:
-			msg = new("notHudMessage");
-			msg.fnt = fnt;
-			msg.txt = txt;
-			msg.pos = pos;
-			msg.vsize = vsize;
-			msg.talign = talign;
-			msg.balign = balign;
-			msg.color = color;
-			msg.holdtics = holdtics;
-			msg.wrap = wrap;
-			msg.layer = layer;
-			msg.Init();
-			break;
-		case NOTMSG_WAGGLE:
-			msg = new("notHudMessageWaggle");
-			msg.fnt = fnt;
-			msg.txt = txt;
-			msg.pos = pos;
-			msg.vsize = vsize;
-			msg.talign = talign;
-			msg.balign = balign;
-			msg.color = color;
-			msg.holdtics = holdtics;
-			msg.wrap = wrap;
-			msg.layer = layer;
-			notHudMessageWaggle(msg).speed = speed;
-			notHudMessageWaggle(msg).strength = strength;
-			notHudMessageWaggle(msg).frequency = frequency;
-			msg.Init();
-			break;
-		default:
-			ThrowAbortException("Unhandled message kind %d",kind);
-			break;
-		}
+		let msg = new("notHudMessageWaggle");
+		msg.fnt = fnt;
+		msg.txt = txt;
+		msg.pos = pos;
+		msg.vsize = vsize;
+		msg.talign = talign;
+		msg.balign = balign;
+		msg.color = color;
+		msg.holdtics = holdtics;
+		msg.wrap = wrap;
+		msg.layer = layer;
+		msg.speed = speed;
+		msg.strength = strength;
+		msg.frequency = frequency;
+		msg.Init();
 		StatusBar.AttachMessage(msg);
 	}
 }
@@ -261,7 +253,7 @@ Class notHudMessageHandler : EventHandler
 
 	static void PlainMsg( Font fnt, string txt, Vector2 pos, Vector2 vsize = (0,0), int talign = -1, Vector2 balign = (0,0), int color = Font.CR_UNTRANSLATED, double holdtime = 0.0, int wrap = 0, int layer = HUDMSGLayer_OverHUD )
 	{
-		QueuedMsg tosend = new("QueuedMsg").InitPlain(fnt,txt,pos,vsize,talign,balign,color,holdtime,wrap,layer);
+		QueuedMsg tosend = notHudMessage.Create(fnt,txt,pos,vsize,talign,balign,color,holdtime,wrap,layer);
 		notHudMessageHandler local = notHudMessageHandler(Find("notHudMessageHandler"));
 		if ( !local ) return;
 		local.queue.Push(tosend);
@@ -269,7 +261,7 @@ Class notHudMessageHandler : EventHandler
 
 	static void WaggleMsg( Font fnt, string txt, Vector2 pos, Vector2 vsize = (0,0), int talign = -1, Vector2 balign = (0,0), int color = Font.CR_UNTRANSLATED, double holdtime = 0.0, double speed = 1.0, double strength = 1.0, double frequency = 1.0, int wrap = 0, int layer = HUDMSGLayer_OverHUD )
 	{
-		QueuedMsg tosend = new("QueuedMsg").InitWaggle(fnt,txt,pos,vsize,talign,balign,color,holdtime,speed,strength,frequency,wrap,layer);
+		QueuedMsg tosend = notHudMessageWaggle.Create(fnt,txt,pos,vsize,talign,balign,color,holdtime,speed,strength,frequency,wrap,layer);
 		notHudMessageHandler local = notHudMessageHandler(Find("notHudMessageHandler"));
 		if ( !local ) return;
 		local.queue.Push(tosend);
