@@ -22,7 +22,7 @@ From play scope:
 
 From ui scope:
 1. Same as on play.
-2. Call `AddSelf` on the created message.
+2. Call `AddSelf()` on the created message.
 3. The message will be added instantly.
 
 ## Creating new messages
