@@ -1,18 +1,10 @@
 version "3.3"
 
-// hello graf you forgot to export this enum
-enum EHUDMSGLayer
-{
-        HUDMSGLayer_OverHUD,
-        HUDMSGLayer_UnderHUD,
-        HUDMSGLayer_OverMap
-};
-
 Class notHudMessage : HUDMessageBase
 {
 	BrokenLines lines;
 	Font fnt;
-	int wrap, talign, tics, holdtics, color, layer;
+	int wrap, talign, tics, holdtics, intics, outtics, color, layer;
 	Vector2 balign, pos, vsize, bsize;
 	string txt;
 
@@ -91,7 +83,7 @@ Class notHudMessage : HUDMessageBase
 		Setup();
 	}
 
-	static clearscope QueuedMsg Create( Font fnt, string txt, Vector2 pos, Vector2 vsize = (0,0), int talign = -1, Vector2 balign = (0,0), int color = Font.CR_UNTRANSLATED, double holdtime = 0.0, int wrap = 0, int layer = HUDMSGLayer_OverHUD )
+	static clearscope QueuedMsg Create( Font fnt, string txt, Vector2 pos, Vector2 vsize = (0,0), int talign = -1, Vector2 balign = (0,0), int color = Font.CR_UNTRANSLATED, double holdtime = 0.0, int wrap = 0, uint id = 0, int layer = HUDMSGLayer_OverHUD )
 	{
 		let msg = new("QueuedMsg");
 		msg.fnt = fnt;
@@ -103,6 +95,7 @@ Class notHudMessage : HUDMessageBase
 		msg.color = color;
 		msg.holdtics = holdtime*Thinker.TICRATE;
 		msg.wrap = wrap;
+		msg.id = id;
 		msg.layer = layer;
 		msg.timestamp = gametic;
 		return msg;
@@ -138,7 +131,7 @@ Class notHudMessageWaggle : notHudMessage
 		phase = 0;
 	}
 
-	static clearscope QueuedMsgWaggle Create( Font fnt, string txt, Vector2 pos, Vector2 vsize = (0,0), int talign = -1, Vector2 balign = (0,0), int color = Font.CR_UNTRANSLATED, double holdtime = 0.0, double speed = 1.0, double strength = 1.0, double frequency = 1.0, int wrap = 0, int layer = HUDMSGLayer_OverHUD )
+	static clearscope QueuedMsgWaggle Create( Font fnt, string txt, Vector2 pos, Vector2 vsize = (0,0), int talign = -1, Vector2 balign = (0,0), int color = Font.CR_UNTRANSLATED, double holdtime = 0.0, double speed = 1.0, double strength = 1.0, double frequency = 1.0, int wrap = 0, uint id = 0, int layer = HUDMSGLayer_OverHUD )
 	{
 		let msg = new("QueuedMsgWaggle");
 		msg.fnt = fnt;
@@ -153,6 +146,7 @@ Class notHudMessageWaggle : notHudMessage
 		msg.strength = strength;
 		msg.frequency = frequency;
 		msg.wrap = wrap;
+		msg.id = id;
 		msg.layer = layer;
 		msg.timestamp = gametic;
 		return msg;
@@ -168,6 +162,7 @@ Class QueuedMsg
 	double holdtics;
 	int layer, color, wrap, talign;
 	int timestamp;
+	uint id;
 
 	virtual ui void AddSelf()
 	{
@@ -183,7 +178,7 @@ Class QueuedMsg
 		msg.wrap = wrap;
 		msg.layer = layer;
 		msg.Init();
-		StatusBar.AttachMessage(msg);
+		StatusBar.AttachMessage(msg,id,layer);
 	}
 }
 
@@ -208,7 +203,7 @@ Class QueuedMsgWaggle : QueuedMsg
 		msg.strength = strength;
 		msg.frequency = frequency;
 		msg.Init();
-		StatusBar.AttachMessage(msg);
+		StatusBar.AttachMessage(msg,id,layer);
 	}
 }
 
@@ -251,15 +246,15 @@ Class notHudMessageHandler : EventHandler
 		}
 	}
 
-	static void PlainMsg( Font fnt, string txt, Vector2 pos, Vector2 vsize = (0,0), int talign = -1, Vector2 balign = (0,0), int color = Font.CR_UNTRANSLATED, double holdtime = 0.0, int wrap = 0, int layer = HUDMSGLayer_OverHUD )
+	static void PlainMsg( Font fnt, string txt, Vector2 pos, Vector2 vsize = (0,0), int talign = -1, Vector2 balign = (0,0), int color = Font.CR_UNTRANSLATED, double holdtime = 0.0, int wrap = 0, uint id = 0, int layer = HUDMSGLayer_OverHUD )
 	{
-		QueuedMsg tosend = notHudMessage.Create(fnt,txt,pos,vsize,talign,balign,color,holdtime,wrap,layer);
+		QueuedMsg tosend = notHudMessage.Create(fnt,txt,pos,vsize,talign,balign,color,holdtime,wrap,id,layer);
 		QueueMsg(tosend);
 	}
 
-	static void WaggleMsg( Font fnt, string txt, Vector2 pos, Vector2 vsize = (0,0), int talign = -1, Vector2 balign = (0,0), int color = Font.CR_UNTRANSLATED, double holdtime = 0.0, double speed = 1.0, double strength = 1.0, double frequency = 1.0, int wrap = 0, int layer = HUDMSGLayer_OverHUD )
+	static void WaggleMsg( Font fnt, string txt, Vector2 pos, Vector2 vsize = (0,0), int talign = -1, Vector2 balign = (0,0), int color = Font.CR_UNTRANSLATED, double holdtime = 0.0, double speed = 1.0, double strength = 1.0, double frequency = 1.0, int wrap = 0, uint id = 0, int layer = HUDMSGLayer_OverHUD )
 	{
-		QueuedMsg tosend = notHudMessageWaggle.Create(fnt,txt,pos,vsize,talign,balign,color,holdtime,speed,strength,frequency,wrap,layer);
+		QueuedMsg tosend = notHudMessageWaggle.Create(fnt,txt,pos,vsize,talign,balign,color,holdtime,speed,strength,frequency,wrap,id,layer);
 		QueueMsg(tosend);
 	}
 }
