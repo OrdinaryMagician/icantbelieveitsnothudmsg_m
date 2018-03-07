@@ -18,7 +18,8 @@ From play scope:
    **QueuedMsg**.
 2. Call the static function `notHudMessageHandler.QueueMsg()` with the created
    message.
-3. Wait 1 tic for it to be added.
+3. Wait 1 tic for it to be added (at least until something like a
+   `PostUiTick()` gets implemented).
 
 From ui scope:
 1. Same as on play.
@@ -42,3 +43,13 @@ In addition, each subclass of **notHudMessage** must implement its own static
 clearscope `Create()` function, with its own set of parameters and return type,
 to create an instance of its **QueuedMsg** subclass. Note that this is NOT a
 virtual function, so there's no overrides to set or anything.
+
+## Included message types
+
+* **notHudMessage** : The standard, plain message. Will have fade in and fade
+  out in the future.
+* **notHudMessageTypeon** : (TODO) The text "types" itself character by
+  character. Fade-in is handled per-character. Once the text is complete, it'll
+  wait for the hold time then fade out as normal.
+* **notHudMessageWaggle** : Example new effect. The text waggles in a wavy
+  pattern.
