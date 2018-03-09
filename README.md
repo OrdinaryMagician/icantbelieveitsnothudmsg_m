@@ -6,6 +6,9 @@ to **ZScript**.
 
 Hopefully it shouldn't be as ugly as **ACS** **HUDMessage**.
 
+Due to timing requirements, this requires a specific feature (see
+[GZDoom PR #433](https://github.com/coelckers/gzdoom/pull/433))
+
 ## The API
 
 The main handler deals with queued messages every tick on play and ui sides.
@@ -18,13 +21,10 @@ From play scope:
    **QueuedMsg**.
 2. Call the static function `notHudMessageHandler.QueueMsg()` with the created
    message.
-3. Wait 1 tic for it to be added (at least until something like a
-   `PostUiTick()` gets implemented).
 
 From ui scope:
-1. Same as on play.
+1. Creation is the same as on play.
 2. Call `AddSelf()` on the created message.
-3. The message will be added instantly.
 
 ## Creating new messages
 

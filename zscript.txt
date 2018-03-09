@@ -83,7 +83,7 @@ Class notHudMessage : HUDMessageBase
 		Setup();
 	}
 
-	static clearscope QueuedMsg Create( Font fnt, string txt, Vector2 pos, Vector2 vsize = (0,0), int talign = -1, Vector2 balign = (0,0), int color = Font.CR_UNTRANSLATED, double holdtime = 0.0, int wrap = 0, uint id = 0, int layer = HUDMSGLayer_OverHUD )
+	static clearscope QueuedMsg Create( Font fnt, string txt, Vector2 pos, Vector2 vsize = (0,0), int talign = -1, Vector2 balign = (0,0), int color = Font.CR_UNTRANSLATED, double holdtime = 0.0, int wrap = 0, uint id = 0, int layer = BaseStatusBar.HUDMSGLayer_OverHUD )
 	{
 		let msg = new("QueuedMsg");
 		msg.fnt = fnt;
@@ -131,7 +131,7 @@ Class notHudMessageWaggle : notHudMessage
 		phase = 0;
 	}
 
-	static clearscope QueuedMsgWaggle Create( Font fnt, string txt, Vector2 pos, Vector2 vsize = (0,0), int talign = -1, Vector2 balign = (0,0), int color = Font.CR_UNTRANSLATED, double holdtime = 0.0, double speed = 1.0, double strength = 1.0, double frequency = 1.0, int wrap = 0, uint id = 0, int layer = HUDMSGLayer_OverHUD )
+	static clearscope QueuedMsgWaggle Create( Font fnt, string txt, Vector2 pos, Vector2 vsize = (0,0), int talign = -1, Vector2 balign = (0,0), int color = Font.CR_UNTRANSLATED, double holdtime = 0.0, double speed = 1.0, double strength = 1.0, double frequency = 1.0, int wrap = 0, uint id = 0, int layer = BaseStatusBar.HUDMSGLayer_OverHUD )
 	{
 		let msg = new("QueuedMsgWaggle");
 		msg.fnt = fnt;
@@ -212,10 +212,10 @@ Class notHudMessageHandler : EventHandler
 {
 	Array <QueuedMsg> queue;
 
-	override void UiTick()
+	override void PostUiTick()
 	{
 		// load 'em up
-		for ( int i=0; i<queue.size(); i++ ) if ( queue[i].timestamp == (gametic-1) ) queue[i].AddSelf();
+		for ( int i=0; i<queue.size(); i++ ) if ( queue[i].timestamp >= gametic ) queue[i].AddSelf();
 	}
 
 	override void WorldTick()
@@ -246,13 +246,13 @@ Class notHudMessageHandler : EventHandler
 		}
 	}
 
-	static void PlainMsg( Font fnt, string txt, Vector2 pos, Vector2 vsize = (0,0), int talign = -1, Vector2 balign = (0,0), int color = Font.CR_UNTRANSLATED, double holdtime = 0.0, int wrap = 0, uint id = 0, int layer = HUDMSGLayer_OverHUD )
+	static void PlainMsg( Font fnt, string txt, Vector2 pos, Vector2 vsize = (0,0), int talign = -1, Vector2 balign = (0,0), int color = Font.CR_UNTRANSLATED, double holdtime = 0.0, int wrap = 0, uint id = 0, int layer = BaseStatusBar.HUDMSGLayer_OverHUD )
 	{
 		QueuedMsg tosend = notHudMessage.Create(fnt,txt,pos,vsize,talign,balign,color,holdtime,wrap,id,layer);
 		QueueMsg(tosend);
 	}
 
-	static void WaggleMsg( Font fnt, string txt, Vector2 pos, Vector2 vsize = (0,0), int talign = -1, Vector2 balign = (0,0), int color = Font.CR_UNTRANSLATED, double holdtime = 0.0, double speed = 1.0, double strength = 1.0, double frequency = 1.0, int wrap = 0, uint id = 0, int layer = HUDMSGLayer_OverHUD )
+	static void WaggleMsg( Font fnt, string txt, Vector2 pos, Vector2 vsize = (0,0), int talign = -1, Vector2 balign = (0,0), int color = Font.CR_UNTRANSLATED, double holdtime = 0.0, double speed = 1.0, double strength = 1.0, double frequency = 1.0, int wrap = 0, uint id = 0, int layer = BaseStatusBar.HUDMSGLayer_OverHUD )
 	{
 		QueuedMsg tosend = notHudMessageWaggle.Create(fnt,txt,pos,vsize,talign,balign,color,holdtime,speed,strength,frequency,wrap,id,layer);
 		QueueMsg(tosend);
