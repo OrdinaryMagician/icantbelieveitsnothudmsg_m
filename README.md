@@ -7,7 +7,10 @@ to **ZScript**.
 Hopefully it shouldn't be as ugly as **ACS** **HUDMessage**.
 
 Due to timing requirements, this requires a specific feature (see
-[GZDoom PR #433](https://github.com/coelckers/gzdoom/pull/433))
+[GZDoom PR #433](https://github.com/coelckers/gzdoom/pull/433)).
+
+This feature has been already merged into
+[QZDoom](https://github.com/raa-eruanna/qzdoom).
 
 ## The API
 
