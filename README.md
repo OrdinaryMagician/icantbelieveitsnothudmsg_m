@@ -1,16 +1,8 @@
 # I Can't Believe It's Not HUDMessage
 
-This is an example **API** I'm writing for the **HUDMessage** interface
-[Graf recently exported](https://github.com/coelckers/gzdoom/commit/bb16e34bf4f589f74acbd51fe31e96c07d37b838)
-to **ZScript**.
+This is an example **API** for GZDoom's ZScript **HUDMessage** interface.
 
 Hopefully it shouldn't be as ugly as **ACS** **HUDMessage**.
-
-Due to timing requirements, this requires a specific feature (see
-[GZDoom PR #433](https://github.com/coelckers/gzdoom/pull/433)).
-
-This feature has been already merged into
-[QZDoom](https://github.com/raa-eruanna/qzdoom).
 
 ## The API
 
