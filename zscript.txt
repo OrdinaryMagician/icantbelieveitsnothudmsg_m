@@ -1,9 +1,16 @@
+//==============================================================================
+// I Can't Believe It's Not Hud Message
+//
+// By Marisa Kirisami
+// Fade In + Out by Major Cooke
+//==============================================================================
 version "3.3"
 
 Class notHudMessage : HUDMessageBase
 {
 	BrokenLines lines;
 	Font fnt;
+	double alpha;
 	int wrap, talign, tics, holdtics, intics, outtics, color, layer;
 	Vector2 balign, pos, vsize, bsize;
 	string txt;
@@ -26,7 +33,7 @@ Class notHudMessage : HUDMessageBase
 	{
 		int vw = (vsize.x>0)?vsize.x:Screen.GetWidth();
 		int vh = (vsize.y>0)?vsize.y:Screen.GetHeight();
-		Screen.DrawText(fnt,color,x,y,line,DTA_VirtualWidth,vw,DTA_VirtualHeight,vh);
+		Screen.DrawText(fnt,color,x,y,line,DTA_VirtualWidth,vw,DTA_VirtualHeight,vh,DTA_Alpha,alpha);
 	}
 
 	override void Draw( int bottom, int visibility )
@@ -55,8 +62,20 @@ Class notHudMessage : HUDMessageBase
 
 	virtual bool DoTick()
 	{
-		if ( holdtics && (tics > holdtics) ) return true;
-		return false;
+		uint total = holdtics + intics + outtics;
+		if (total && (tics > total)) return true;	// Message expired.
+		
+		int inhold = holdtics + intics;
+		if (total <= 0)
+			alpha = 1.0;
+		else if (tics < intics) // Fade in
+			alpha = Min(1.0, (1.0 / intics) * tics);
+		else if ((outtics > 0) && (tics > inhold) && (tics <= total)) // Fade out
+			alpha = 1.0 - (1.0 / outtics) * (tics - inhold);
+		else	// Holding
+			alpha = 1.0;
+			
+		return false; // Message still ongoing.
 	}
 
 	override bool Tick()
@@ -83,7 +102,7 @@ Class notHudMessage : HUDMessageBase
 		Setup();
 	}
 
-	static clearscope QueuedMsg Create( Font fnt, string txt, Vector2 pos, Vector2 vsize = (0,0), int talign = -1, Vector2 balign = (0,0), int color = Font.CR_UNTRANSLATED, double holdtime = 0.0, int wrap = 0, uint id = 0, int layer = BaseStatusBar.HUDMSGLayer_OverHUD )
+	static clearscope QueuedMsg Create( Font fnt, string txt, Vector2 pos, Vector2 vsize = (0,0), int talign = -1, Vector2 balign = (0,0), int color = Font.CR_UNTRANSLATED, Vector3 time = (0,0,0), int wrap = 0, uint id = 0, int layer = BaseStatusBar.HUDMSGLayer_OverHUD )
 	{
 		let msg = new("QueuedMsg");
 		msg.fnt = fnt;
@@ -93,7 +112,9 @@ Class notHudMessage : HUDMessageBase
 		msg.talign = talign;
 		msg.balign = balign;
 		msg.color = color;
-		msg.holdtics = holdtime*Thinker.TICRATE;
+		msg.intics = time.x * Thinker.TICRATE;
+		msg.holdtics = time.y * Thinker.TICRATE;
+		msg.outtics = time.z * Thinker.TICRATE;
 		msg.wrap = wrap;
 		msg.id = id;
 		msg.layer = layer;
@@ -113,7 +134,7 @@ Class notHudMessageWaggle : notHudMessage
 		double cphase = phase;
 		for ( int i=0; i<line.length(); i++ )
 		{
-			Screen.DrawChar(fnt,color,x,y+sin(cphase)*strength,line.CharCodeAt(i),DTA_VirtualWidth,vw,DTA_VirtualHeight,vh);
+			Screen.DrawChar(fnt,color,x,y+sin(cphase)*strength,line.CharCodeAt(i),DTA_VirtualWidth,vw,DTA_VirtualHeight,vh,DTA_Alpha,alpha);
 			x += fnt.GetCharWidth(line.CharCodeAt(i));
 			cphase += frequency;
 		}
@@ -131,7 +152,7 @@ Class notHudMessageWaggle : notHudMessage
 		phase = 0;
 	}
 
-	static clearscope QueuedMsgWaggle Create( Font fnt, string txt, Vector2 pos, Vector2 vsize = (0,0), int talign = -1, Vector2 balign = (0,0), int color = Font.CR_UNTRANSLATED, double holdtime = 0.0, double speed = 1.0, double strength = 1.0, double frequency = 1.0, int wrap = 0, uint id = 0, int layer = BaseStatusBar.HUDMSGLayer_OverHUD )
+	static clearscope QueuedMsgWaggle Create( Font fnt, string txt, Vector2 pos, Vector2 vsize = (0,0), int talign = -1, Vector2 balign = (0,0), int color = Font.CR_UNTRANSLATED, Vector3 time = (0,0,0), double speed = 1.0, double strength = 1.0, double frequency = 1.0, int wrap = 0, uint id = 0, int layer = BaseStatusBar.HUDMSGLayer_OverHUD )
 	{
 		let msg = new("QueuedMsgWaggle");
 		msg.fnt = fnt;
@@ -141,8 +162,10 @@ Class notHudMessageWaggle : notHudMessage
 		msg.talign = talign;
 		msg.balign = balign;
 		msg.color = color;
-		msg.holdtics = holdtime*Thinker.TICRATE;
-		msg.speed = speed*Thinker.TICRATE;
+		msg.intics = time.x * Thinker.TICRATE;
+		msg.holdtics = time.y * Thinker.TICRATE;
+		msg.outtics = time.z * Thinker.TICRATE;
+		msg.speed = speed * Thinker.TICRATE;
 		msg.strength = strength;
 		msg.frequency = frequency;
 		msg.wrap = wrap;
@@ -159,7 +182,7 @@ Class QueuedMsg
 	TextureID tex;
 	string txt;
 	Vector2 pos, vsize, balign;
-	double holdtics;
+	double holdtics, intics, outtics;
 	int layer, color, wrap, talign;
 	int timestamp;
 	uint id;
@@ -174,7 +197,9 @@ Class QueuedMsg
 		msg.talign = talign;
 		msg.balign = balign;
 		msg.color = color;
+		msg.intics = intics;
 		msg.holdtics = holdtics;
+		msg.outtics = outtics;
 		msg.wrap = wrap;
 		msg.layer = layer;
 		msg.Init();
@@ -196,7 +221,9 @@ Class QueuedMsgWaggle : QueuedMsg
 		msg.talign = talign;
 		msg.balign = balign;
 		msg.color = color;
+		msg.intics = intics;
 		msg.holdtics = holdtics;
+		msg.outtics = outtics;
 		msg.wrap = wrap;
 		msg.layer = layer;
 		msg.speed = speed;
@@ -208,6 +235,8 @@ Class QueuedMsgWaggle : QueuedMsg
 }
 
 // this event handler serves as a proxy between play and ui for adding messages
+// [MC] Note for Time: It's a Vector3. X = fade in, Y = hold time, Z = fade out time.
+// This is all added together to make the total time.
 Class notHudMessageHandler : EventHandler
 {
 	Array <QueuedMsg> queue;
@@ -215,7 +244,11 @@ Class notHudMessageHandler : EventHandler
 	override void PostUiTick()
 	{
 		// load 'em up
-		for ( int i=0; i<queue.size(); i++ ) if ( queue[i].timestamp >= gametic ) queue[i].AddSelf();
+		if (queue.Size() > 0)
+			for ( int i=0; i<queue.size(); i++ ) 
+				if ( queue[i].timestamp >= gametic ) 
+					queue[i].AddSelf();
+		
 	}
 
 	override void WorldTick()
@@ -241,20 +274,20 @@ Class notHudMessageHandler : EventHandler
 		if ( e.Name ~== "TestMsg" )
 		{
 			Vector2 midscr = (Screen.GetWidth(),Screen.GetHeight())*0.5;
-			WaggleMsg(smallfont,"How did this get here I am not good with computer",(160,180),(320,200),frequency:60.0);
-			PlainMsg(Font.GetFont('STFOUCH0'),"A A A",(80,50),(160,100),holdtime:5.0);
+			WaggleMsg(smallfont,"How did this get here I am not good with computer",(160,180),(320,200),time:(1,3,1), frequency:60.0);
+			PlainMsg(Font.GetFont('STFOUCH0'),"A A A",(80,50),(160,100),time:(1,3,1));
 		}
 	}
 
-	static void PlainMsg( Font fnt, string txt, Vector2 pos, Vector2 vsize = (0,0), int talign = -1, Vector2 balign = (0,0), int color = Font.CR_UNTRANSLATED, double holdtime = 0.0, int wrap = 0, uint id = 0, int layer = BaseStatusBar.HUDMSGLayer_OverHUD )
+	static void PlainMsg( Font fnt, string txt, Vector2 pos, Vector2 vsize = (0,0), int talign = -1, Vector2 balign = (0,0), int color = Font.CR_UNTRANSLATED, Vector3 time = (0,0,0), int wrap = 0, uint id = 0, int layer = BaseStatusBar.HUDMSGLayer_OverHUD )
 	{
-		QueuedMsg tosend = notHudMessage.Create(fnt,txt,pos,vsize,talign,balign,color,holdtime,wrap,id,layer);
+		QueuedMsg tosend = notHudMessage.Create(fnt,txt,pos,vsize,talign,balign,color,time,wrap,id,layer);
 		QueueMsg(tosend);
 	}
 
-	static void WaggleMsg( Font fnt, string txt, Vector2 pos, Vector2 vsize = (0,0), int talign = -1, Vector2 balign = (0,0), int color = Font.CR_UNTRANSLATED, double holdtime = 0.0, double speed = 1.0, double strength = 1.0, double frequency = 1.0, int wrap = 0, uint id = 0, int layer = BaseStatusBar.HUDMSGLayer_OverHUD )
+	static void WaggleMsg( Font fnt, string txt, Vector2 pos, Vector2 vsize = (0,0), int talign = -1, Vector2 balign = (0,0), int color = Font.CR_UNTRANSLATED, Vector3 time = (0,0,0), double speed = 1.0, double strength = 1.0, double frequency = 1.0, int wrap = 0, uint id = 0, int layer = BaseStatusBar.HUDMSGLayer_OverHUD )
 	{
-		QueuedMsg tosend = notHudMessageWaggle.Create(fnt,txt,pos,vsize,talign,balign,color,holdtime,speed,strength,frequency,wrap,id,layer);
+		QueuedMsg tosend = notHudMessageWaggle.Create(fnt,txt,pos,vsize,talign,balign,color,time,speed,strength,frequency,wrap,id,layer);
 		QueueMsg(tosend);
 	}
 }
