@@ -1,7 +1,7 @@
 //==============================================================================
 // I Can't Believe It's Not Hud Message
 //
-// By Marisa Kirisami
+// By Marisa Kirisame
 // Fade In + Out by Major Cooke
 //==============================================================================
 
