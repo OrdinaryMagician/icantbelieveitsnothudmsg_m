@@ -7,7 +7,7 @@
 
 Class notHudMessage : HUDMessageBase
 {
-	BrokenLines lines;
+	transient BrokenLines lines;
 	HUDFont fnt;
 	double alpha;
 	int wrap, talign, tics, holdtics, intics, outtics, color, layer;
@@ -39,11 +39,7 @@ Class notHudMessage : HUDMessageBase
 	{
 		if ( visibility & layer ) return;
 		Vector2 base = CalculateBoxAlignment();
-		if ( !lines )
-		{
-			DrawLine(base.x,base.y,txt);
-			return;
-		}
+		if ( !lines ) Setup();
 		double linex, liney = base.y, len;
 		String line;
 		for ( int i=0; i<lines.Count(); i++ )
@@ -96,7 +92,6 @@ Class notHudMessage : HUDMessageBase
 	void Init()
 	{
 		tics = 0;
-		Setup();
 	}
 
 	static clearscope QueuedMsg Create( Font fnt, string txt, Vector2 pos, Vector2 vsize = (0,0), int talign = -1, Vector2 balign = (0,0), int color = Font.CR_UNTRANSLATED, Vector3 time = (0,0,0), int wrap = 0, uint id = 0, int layer = BaseStatusBar.HUDMSGLayer_OverHUD )
