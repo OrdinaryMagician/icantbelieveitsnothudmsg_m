@@ -58,7 +58,7 @@ Class notHudMessage : HUDMessageBase
 
 	virtual bool DoTick()
 	{
-		if (holdtics == -Thinker.TICRATE)
+		if (holdtics < 0)
 		{
 			if (tics < intics)	
 				alpha = Min(1.0, (1.0 / intics) * tics);
